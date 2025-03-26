@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Price & Parts Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 40px;
+            background: linear-gradient(135deg, #1e1e2f, #34344a);
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 450px;
+            margin-bottom: 200px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .container:hover {
+            transform: scale(1.02);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #ffcc00;
+            text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.2);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            outline: none;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(90deg, #ff5733, #ffcc00);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            margin-bottom: 50px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background: linear-gradient(90deg, #ffcc00, #ff5733);
+            transform: scale(1.05);
+        }
+
+        .result-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0px 0px 8px rgba(255, 255, 255, 0.2);
+            max-width: 350px;
+            text-align: center;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .card img {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .card h2 {
+            color: #ffcc00;
+            padding-bottom:10px;
+        }
+
+        .card p {
+            text-align: left;
+            font-size: 16px;
+        }
+
+        .chart-container {
+            max-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .hero {
+            width: 100%;
+            min-height: 100vh;
+            background: linear-gradient(135deg, rgba(30, 30, 47, 0.9), rgba(52, 52, 74, 0.9)), 
+                        url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+            color: #ffffff;
+        }
+        
+        .hero-content h1 {
+            font-size: 48px;
+            color: #ffcc00;
+            text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+        
+        .hero-content p {
+            font-size: 20px;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .hero-content button {
+            padding: 15px 40px;
+            font-size: 18px;
+            width:60%;
+            background: linear-gradient(90deg, #ff5733, #ffcc00);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+        }
+        
+        .hero-content button:hover {
+            background: linear-gradient(90deg, #ffcc00, #ff5733);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body>
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Discover Your Vehicle's Maintenance Costs</h1>
+            <p>Find the best car prices and parts with just a few clicks. Explore now!</p>
+            <button onclick="document.getElementById('make').focus()">Start Exploring</button>
+        </div>
+    </section>
+    <div class="container">
+        <h1>Car Price & Parts Finder</h1>
+        <input type="text" id="make" placeholder="Enter Car Make">
+        <input type="text" id="model" placeholder="Enter Car Model">
+        <button onclick="fetchCarData()">Get Prices</button>
+    </div>
+
+    <div class="result-container" id="results"></div>
+
+    <script>
+        const carData = {
+            "Toyota Corolla": {
+                year: 2022,
+                price: "$22,000",
+                mileage: "30 MPG",
+                maintenanceCost: "$500 per year",
+                reliability: 9,
+                image: "https://bucket.dealervenom.com/copeland-toyota/C430752_8X8_Front.webp"
+            },
+            "Honda Civic": {
+                year: 2023,
+                price: "$25,000",
+                mileage: "32 MPG",
+                maintenanceCost: "$600 per year",
+                reliability: 8.5,
+                image: "https://i.pinimg.com/736x/f1/c1/eb/f1c1eb88538415b4271c984b25b83c72.jpg"
+            },
+            "Ford Mustang": {
+                year: 2024,
+                price: "$30,000",
+                mileage: "25 MPG",
+                maintenanceCost: "$700 per year",
+                reliability: 8,
+                image: "https://hips.hearstapps.com/hmg-prod/images/2025-ford-mustang-60th-anniversary-exterior-66227932bb88e.jpg?crop=0.793xw:1.00xh;0.106xw,0&resize=1200:*"
+            },
+            "Tesla Model 3": {
+                year: 2023,
+                price: "$40,000",
+                mileage: "Electric - 272 miles range",
+                maintenanceCost: "$400 per year",
+                reliability: 9.5,
+                image: "https://ev-database.org/img/auto/Tesla_Model_3_LR_AWD/Tesla_Model_3_LR_AWD-01.jpg"
+            },
+            "BMW 3 Series": {
+                year: 2023,
+                price: "$45,000",
+                mileage: "28 MPG",
+                maintenanceCost: "$800 per year",
+                reliability: 8,
+                image: "https://cdn.motor1.com/images/mgl/mrz2E6/s3/2023-bmw-3-series-sedan.jpg"
+            },
+            "Mercedes-Benz C-Class": {
+                year: 2023,
+                price: "$48,000",
+                mileage: "26 MPG",
+                maintenanceCost: "$900 per year",
+                reliability: 8.2,
+                image: "https://www.mbusa.com/content/dam/mb-nafta/us/myco/my23/c/class-sedan/all-vehicles/2023-C-CLASS-SEDAN-AVP-DR.jpg"
+            },
+            "Audi A4": {
+                year: 2023,
+                price: "$42,000",
+                mileage: "27 MPG",
+                maintenanceCost: "$750 per year",
+                reliability: 8.3,
+                image: "https://media.ed.edmunds-media.com/audi/a4/2023/oem/2023_audi_a4_sedan_prestige-40-tfsi-quattro_fq_oem_1_1280.jpg"
+            },
+            "Chevrolet Camaro": {
+                year: 2024,
+                price: "$35,000",
+                mileage: "22 MPG",
+                maintenanceCost: "$850 per year",
+                reliability: 7.5,
+                image: "https://www.chevrolet.com/content/dam/chevrolet/na/us/english/index/performance/2024-camaro/mov/01-images/2024-camaro-masthead-01.jpg"
+            }
+        };
+        
+        function createChart(car) {
+            const ctx = document.getElementById('carChart').getContext('2d');
+
+            if (window.myChart) {
+                window.myChart.destroy();
+            }
+
+            window.myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mileage (MPG)', 'Maintenance Cost ($/yr)', 'Reliability (1-10)'],
+                    datasets: [{
+                        label: `${car.name} Stats`,
+                        data: [
+                            parseFloat(car.mileage),
+                            parseFloat(car.maintenanceCost.replace('$', '').replace(' per year', '')),
+                            car.reliability
+                        ],
+                        backgroundColor: ['#4CAF50', '#FF5733', '#FFC300'],
+                        borderColor: ['#2E7D32', '#C70039', '#FF8C00'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: "#ffffff" }
+                        },
+                        x: {
+                            ticks: { color: "#ffffff" }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: "#ffffff" }
+                        }
+                    }
+                }
+            });
+        }
+
+   function fetchCarData() {
+    const make = document.getElementById('make').value.trim();
+    const model = document.getElementById('model').value.trim();
+    const carKey = `${make} ${model}`;
+
+    if (!make || !model) {
+        alert("Please enter both car make and model!");
+        return;
+    }
+
+    if (carData[carKey]) {
+        const car = carData[carKey];
+
+        // Mock car parts & prices data
+        const partsData = [
+            { part: "Brake Pads", price: "$120" },
+            { part: "Battery", price: "$150" },
+            { part: "Oil Filter", price: "$30" },
+            { part: "Tires (Set of 4)", price: "$600" }
+        ];
+
+        // Generate parts price table
+        let partsTable = `
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: rgba(255, 255, 255, 0.2);">
+                        <th style="padding: 8px; border-bottom: 2px solid #ffcc00; text-align: left;">Part</th>
+                        <th style="padding: 8px; border-bottom: 2px solid #ffcc00; text-align: right;">Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        partsData.forEach(part => {
+            partsTable += `
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${part.part}</td>
+                    <td style="padding: 8px; text-align: right; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${part.price}</td>
+                </tr>
+            `;
+        });
+
+        partsTable += `</tbody></table>`;
+
+        // Update the results container with three separate cards
+        document.getElementById('results').innerHTML = `
+            <div class="card">
+                <img src="${car.image}" alt="${carKey}" 
+                     onerror="this.onerror=null; this.src='fallback-image.jpg';">
+                <h2>${carKey}</h2>
+                <p><b>Year:</b> ${car.year}</p>
+                <p><b>Price:</b> ${car.price}</p>
+                <p><b>Mileage:</b> ${car.mileage}</p>
+                <p><b>Maintenance Cost:</b> ${car.maintenanceCost}</p>
+                <p><b>Reliability:</b> ${car.reliability}/10</p>
+            </div>
+
+            <div class="card">
+                <h2>Parts & Prices</h2>
+                ${partsTable}
+            </div>
+
+            <div class="card chart-container">
+                <canvas id="carChart" style="max-width: 350px; height: 300px;"></canvas>
+            </div>
+        `;
+
+        createChart(car);
+    } else {
+        document.getElementById('results').innerHTML = `<p style="color: red;">No data found for this car.</p>`;
+    }
+}
+    </script>
+</body>
+</html>
